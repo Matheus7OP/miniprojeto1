@@ -15,10 +15,13 @@ PIECE_RADIUS = 20
 
 BOARD_COLOR_1 = (192, 108, 37)
 BOARD_COLOR_2 = (236, 174, 118)
+POSSIBLE_MOVEMENT = (125, 202, 92)
 
-PLAYER1_COLOR = (23, 98, 161)
-PLAYER2_COLOR = (125, 202, 92)
+PLAYER1_COLOR = (197, 20, 16)
+PLAYER2_COLOR = (23, 98, 167)
+
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 # fim das constantes.
 
 class Piece(pygame.sprite.Sprite):
@@ -35,7 +38,10 @@ class Piece(pygame.sprite.Sprite):
 		self.status = 'alive'
 		
 	def draw_piece(self, gameBoard):
-		pygame.draw.circle(gameBoard, self.color, [self.coord[0]*60+30, self.coord[1]*60+30], PIECE_RADIUS)
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		pygame.draw.circle(gameBoard, self.color, [column*60+30, row*60+30], PIECE_RADIUS)
 		
 	def check_movement(self, new_coord, gameBoard):
 		column = new_coord[0]
@@ -73,13 +79,32 @@ class Piece(pygame.sprite.Sprite):
 		column = self.coord[0]
 		gameBoard.board_status[row][column] = self.player
 		
+	def possible_moves(self):
+		to_paint = []
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		if self.player == 2:
+			if self.check_movement([column-1, row-1], gameBoard):
+				to_paint.append([column-1, row-1])
+				
+			if self.check_movement([column+1, row-1], gameBoard):
+				to_paint.append([column+1, row-1])
+		else:
+			if self.check_movement([column-1, row+1], gameBoard):
+				to_paint.append([column-1, row+1])
+				
+			if self.check_movement([column+1, row+1], gameBoard):
+				to_paint.append([column+1, row+1])
+		
+		return to_paint
 
 class Board(pygame.sprite.Sprite):
 	def __init__(self, board_size):
-		self.colors = [BOARD_COLOR_1, BOARD_COLOR_2]	# cores do quadriculado alternado.
+		self.colors = [BOARD_COLOR_1, BOARD_COLOR_2, POSSIBLE_MOVEMENT]	# cores do quadriculado alternado.
 		
 		self.grid_size = board_size		# tamanho do tabuleiro (n x n).
-		self.surface_size = 480	# tamanho da tela em pixels.
+		self.surface_size = 480			# tamanho da tela em pixels.
 		
 		self.square_size = 60
 		self.surface = pygame.display.set_mode((self.surface_size, self.surface_size)) # +220 1ºp (MENU)
@@ -92,7 +117,7 @@ class Board(pygame.sprite.Sprite):
 			for j in xrange(0, board_size):
 				self.board_status[i].append(0)
 				
-		for i in xrange(board_size):	# adicionando peças iniciais ao tabuleiro.
+		for i in xrange(board_size):	# adicionando peças iniciais ao board_status.
 			if i == 3 or i == 4: continue
 			
 			if(i <= 3): player = 1
@@ -143,14 +168,24 @@ class Board(pygame.sprite.Sprite):
 					self.amount_pieces += 1
 	
 	def update_board(self):
-		area = (0, 0, self.surface_size, self.surface_size)
-		self.surface.fill(BLACK, area)
+		self.surface.fill(BLACK)
 		
 		self.initialize_board()
 		
 		for piece in self.pieces:
 			if piece.status == 'alive':
 				piece.draw_piece(self.surface)
+	
+	def show_possible_moves(self, possible_moves):
+		for coord in possible_moves:
+		
+			column = coord[0]
+			row = coord[1]
+			
+			square = (column*self.square_size, row*self.square_size, self.square_size, self.square_size)
+			self.surface.fill(self.colors[2], square)
+		
+		pygame.display.update()
 						
 						
 gameBoard = Board(BOARD_SIZE)
@@ -180,6 +215,10 @@ while not gameExit:
 		
 		for piece in gameBoard.pieces:
 			if piece.coord == actual_coordinate:
+				
+				possible_moves = piece.possible_moves()
+				gameBoard.show_possible_moves(possible_moves)
+				
 				new_click = pygame.event.wait()
 				
 				while new_click.type != pygame.MOUSEBUTTONDOWN:
@@ -195,7 +234,7 @@ while not gameExit:
 				
 				gameBoard.get_info()
 				
-	gameBoard.update_board()			
+	gameBoard.update_board()				
 	pygame.display.update()
 
 pygame.quit()
