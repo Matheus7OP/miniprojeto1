@@ -112,6 +112,8 @@ class Board(pygame.sprite.Sprite):
 		self.board_status = []
 		self.amount_pieces = 0
 		
+		self.rounds = 1
+		
 		for i in xrange(board_size):
 			self.board_status.append([])
 			for j in xrange(0, board_size):
@@ -215,24 +217,26 @@ while not gameExit:
 		
 		for piece in gameBoard.pieces:
 			if piece.coord == actual_coordinate:
-				
-				possible_moves = piece.possible_moves()
-				gameBoard.show_possible_moves(possible_moves)
-				
-				new_click = pygame.event.wait()
-				
-				while new_click.type != pygame.MOUSEBUTTONDOWN:
+				if piece.player == (gameBoard.rounds%2)+1:
+					
+					possible_moves = piece.possible_moves()
+					gameBoard.show_possible_moves(possible_moves)
+					
 					new_click = pygame.event.wait()
-				
-				new_position = pygame.mouse.get_pos()
-				new_coord = [new_position[0]/60, new_position[1]/60]
-				
-				if(piece.check_movement(new_coord, gameBoard)):
-					piece.move(new_coord, gameBoard)
-				else:
-					print 'Invalid movement. Try again.'
-				
-				gameBoard.get_info()
+					
+					while new_click.type != pygame.MOUSEBUTTONDOWN:
+						new_click = pygame.event.wait()
+					
+					new_position = pygame.mouse.get_pos()
+					new_coord = [new_position[0]/60, new_position[1]/60]
+					
+					if(piece.check_movement(new_coord, gameBoard)):
+						piece.move(new_coord, gameBoard)
+						gameBoard.rounds += 1
+					else:
+						print 'Invalid movement. Try again.'
+					
+					gameBoard.get_info()
 				
 	gameBoard.update_board()				
 	pygame.display.update()
