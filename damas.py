@@ -47,6 +47,22 @@ class Piece(pygame.sprite.Sprite):
 		column = new_coord[0]
 		row = new_coord[1]
 		
+		obligatory = self.obligatory_capture(gameBoard)
+		
+		for i in xrange(len(obligatory)):
+			if [column, row] == obligatory[i]:
+				captures = self.possible_captures(gameBoard)
+				
+				cap_row = captures[i][1]
+				cap_column = captures[i][0]
+				
+				for piece in gameBoard.pieces:
+					if piece.coord == [cap_column, cap_row]:
+						piece.status = 'dead'
+						gameBoard.board_status[cap_row][cap_column] = 0
+				
+				return True
+		
 		if column < 0 or column > 7:
 			return False
 		if row < 0 or row > 7:
@@ -79,25 +95,104 @@ class Piece(pygame.sprite.Sprite):
 		column = self.coord[0]
 		gameBoard.board_status[row][column] = self.player
 		
-	def possible_moves(self):
-		to_paint = []
+	def possible_moves(self, gameBoard):
+		moves = []
 		row = self.coord[1]
 		column = self.coord[0]
 		
-		if self.player == 2:
-			if self.check_movement([column-1, row-1], gameBoard):
-				to_paint.append([column-1, row-1])
-				
-			if self.check_movement([column+1, row-1], gameBoard):
-				to_paint.append([column+1, row-1])
-		else:
-			if self.check_movement([column-1, row+1], gameBoard):
-				to_paint.append([column-1, row+1])
-				
-			if self.check_movement([column+1, row+1], gameBoard):
-				to_paint.append([column+1, row+1])
+		obligatory = self.obligatory_capture(gameBoard)
 		
-		return to_paint
+		if obligatory == []:
+			if self.player == 2:
+				if self.check_movement([column-1, row-1], gameBoard):
+					moves.append([column-1, row-1])
+					
+				if self.check_movement([column+1, row-1], gameBoard):
+					moves.append([column+1, row-1])
+			else:
+				if self.check_movement([column-1, row+1], gameBoard):
+					moves.append([column-1, row+1])
+					
+				if self.check_movement([column+1, row+1], gameBoard):
+					moves.append([column+1, row+1])
+			
+			return moves
+		else:
+			return obligatory
+	
+	def get_adjacent(self):
+		adjacents = []
+		
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		for i in xrange(row-1, row+2):
+			for j in xrange(column-1, column+2):
+				if i == row and j == column:
+					continue
+					
+				if i >= 0 and j >= 0:
+					if i <= 7 and j <= 7:
+						adjacents.append([j, i])
+			
+		return adjacents
+		
+	def obligatory_capture(self, gameBoard):
+		adjacents = self.get_adjacent()
+		obligatory = []
+		
+		for coord in adjacents:
+			row = coord[1]
+			column = coord[0]
+			
+			if gameBoard.board_status[row][column] != 0:
+				if gameBoard.board_status[row][column] != self.player:
+					row_piece = self.coord[1]
+					column_piece = self.coord[0]
+					
+					movement = [row_piece-row, column_piece-column]
+					
+					if row - movement[0] >= 0 and row - movement[1] <= 7:
+						if column - movement[1] >= 0 and column - movement[1] <= 7:
+							if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
+								new_place = [column - movement[1], row - movement[0]]
+								obligatory.append(new_place)
+		
+		return obligatory
+		
+	def possible_captures(self, gameBoard):
+		adjacents = self.get_adjacent()
+		captures = []
+		
+		for coord in adjacents:
+			row = coord[1]
+			column = coord[0]
+			
+			if gameBoard.board_status[row][column] != 0:
+				if gameBoard.board_status[row][column] != self.player:
+					row_piece = self.coord[1]
+					column_piece = self.coord[0]
+					
+					movement = [row_piece-row, column_piece-column]
+					
+					if row - movement[0] >= 0 and row - movement[1] <= 7:
+						if column - movement[1] >= 0 and column - movement[1] <= 7:
+							if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
+								new_place = [column - movement[1], row - movement[0]]
+								captures.append([column, row])
+							
+		return captures
+	
+	#def get_movement(self, movement):
+		#if movement == [1, 1]:
+			#return 'NORTHWEST'
+		#if movement == [1, -1]:
+			#return 'NORTHEAST'
+		#if movement == [-1, 1]:
+			#return 'SOUTHWEST'
+		#if movement == [-1, -1]:
+			#return 'SOUTHEAST'
+		
 
 class Board(pygame.sprite.Sprite):
 	def __init__(self, board_size):
@@ -216,10 +311,10 @@ while not gameExit:
 		print 'You clicked at', [actual_row, actual_column]
 		
 		for piece in gameBoard.pieces:
-			if piece.coord == actual_coordinate:
+			if piece.coord == actual_coordinate and piece.status == 'alive':
 				if piece.player == (gameBoard.rounds%2)+1:
 					
-					possible_moves = piece.possible_moves()
+					possible_moves = piece.possible_moves(gameBoard)
 					gameBoard.show_possible_moves(possible_moves)
 					
 					new_click = pygame.event.wait()
