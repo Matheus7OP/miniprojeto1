@@ -35,7 +35,6 @@ class Piece(pygame.sprite.Sprite):
 		self.coord = [position[0]/60, position[1]/60]
 		
 		self.ID = piece_id
-		self.status = 'alive'
 		
 	def draw_piece(self, gameBoard):
 		row = self.coord[1]
@@ -56,9 +55,9 @@ class Piece(pygame.sprite.Sprite):
 				cap_row = captures[i][1]
 				cap_column = captures[i][0]
 				
-				for piece in gameBoard.pieces:
-					if piece.coord == [cap_column, cap_row]:
-						piece.status = 'dead'
+				for i in xrange(len(gameBoard.pieces)-1, -1, -1):
+					if gameBoard.pieces[i].coord == [cap_column, cap_row]:
+						gameBoard.pieces.pop(i)
 						gameBoard.board_status[cap_row][cap_column] = 0
 				
 				return True
@@ -270,8 +269,7 @@ class Board(pygame.sprite.Sprite):
 		self.initialize_board()
 		
 		for piece in self.pieces:
-			if piece.status == 'alive':
-				piece.draw_piece(self.surface)
+			piece.draw_piece(self.surface)
 	
 	def show_possible_moves(self, possible_moves):
 		for coord in possible_moves:
@@ -311,7 +309,7 @@ while not gameExit:
 		print 'You clicked at', [actual_row, actual_column]
 		
 		for piece in gameBoard.pieces:
-			if piece.coord == actual_coordinate and piece.status == 'alive':
+			if piece.coord == actual_coordinate:
 				if piece.player == (gameBoard.rounds%2)+1:
 					
 					possible_moves = piece.possible_moves(gameBoard)
