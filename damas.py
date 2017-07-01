@@ -35,6 +35,7 @@ class Piece(pygame.sprite.Sprite):
 		self.coord = [position[0]/60, position[1]/60]
 		
 		self.ID = piece_id
+		self.status = 'man'
 		
 	def draw_piece(self, gameBoard):
 		row = self.coord[1]
@@ -42,25 +43,28 @@ class Piece(pygame.sprite.Sprite):
 		
 		pygame.draw.circle(gameBoard, self.color, [column*60+30, row*60+30], PIECE_RADIUS)
 		
-	def check_movement(self, new_coord, gameBoard):
+	def check_movement(self, new_coord, gameBoard):	# exceção: retorna o ID da peça se ela fizer uma captura
 		column = new_coord[0]
 		row = new_coord[1]
 		
 		obligatory = self.obligatory_capture(gameBoard)
 		
-		for i in xrange(len(obligatory)):
-			if [column, row] == obligatory[i]:
-				captures = self.possible_captures(gameBoard)
-				
-				cap_row = captures[i][1]
-				cap_column = captures[i][0]
-				
-				for i in xrange(len(gameBoard.pieces)-1, -1, -1):
-					if gameBoard.pieces[i].coord == [cap_column, cap_row]:
-						gameBoard.pieces.pop(i)
-						gameBoard.board_status[cap_row][cap_column] = 0
-				
-				return True
+		if obligatory != []:
+			for i in xrange(len(obligatory)):
+				if [column, row] == obligatory[i]:
+					captures = self.possible_captures(gameBoard)
+					
+					cap_row = captures[i][1]
+					cap_column = captures[i][0]
+					
+					for i in xrange(len(gameBoard.pieces)-1, -1, -1):
+						if gameBoard.pieces[i].coord == [cap_column, cap_row]:
+							gameBoard.pieces.pop(i)
+							gameBoard.board_status[cap_row][cap_column] = 0
+					
+					return self.ID
+			
+			return False
 		
 		if column < 0 or column > 7:
 			return False
@@ -172,7 +176,7 @@ class Piece(pygame.sprite.Sprite):
 					row_piece = self.coord[1]
 					column_piece = self.coord[0]
 					
-					movement = [row_piece-row, column_piece-column]
+					movement = [row_piece-row, column_piece-column]		# quanto a peça deslocou
 					
 					if row - movement[0] >= 0 and row - movement[1] <= 7:
 						if column - movement[1] >= 0 and column - movement[1] <= 7:
@@ -270,6 +274,8 @@ class Board(pygame.sprite.Sprite):
 		
 		for piece in self.pieces:
 			piece.draw_piece(self.surface)
+		
+		pygame.display.update()
 	
 	def show_possible_moves(self, possible_moves):
 		for coord in possible_moves:
@@ -281,7 +287,42 @@ class Board(pygame.sprite.Sprite):
 			self.surface.fill(self.colors[2], square)
 		
 		pygame.display.update()
-						
+	
+	def blind_pieces(self):
+		quantity_pieces = len(self.pieces)
+		blind_pieces = []
+		
+		for i in xrange(quantity_pieces):	# checando as peças de mov obrigatório do player da vez
+			if self.pieces[i].player % 2 == (self.rounds-1)%2:
+				obligatory = self.pieces[i].obligatory_capture(gameBoard)
+				
+				if obligatory != []:
+					blind_pieces.append(self.pieces[i].ID)
+		
+		return blind_pieces
+	
+	def multiple_jump(self, piece_ID):
+		blind_pieces_id = self.blind_pieces()
+		multiple_jump = False
+		
+		if blind_pieces_id != []:
+			for ID in blind_pieces_id:
+				if piece_ID == ID:
+					multiple_jump = True
+					break
+		
+		return multiple_jump
+	
+	def get_click_coord(self):
+		new_click = pygame.event.wait()
+					
+		while new_click.type != pygame.MOUSEBUTTONDOWN:
+			new_click = pygame.event.wait()
+		
+		new_position = pygame.mouse.get_pos()
+		new_coord = [new_position[0]/60, new_position[1]/60]
+		
+		return new_coord
 						
 gameBoard = Board(BOARD_SIZE)
 sqr_size = gameBoard.square_size
@@ -310,29 +351,57 @@ while not gameExit:
 		
 		for piece in gameBoard.pieces:
 			if piece.coord == actual_coordinate:
-				if piece.player == (gameBoard.rounds%2)+1:
+				if piece.player%2 == (gameBoard.rounds-1)%2:	# checando se a peça clicada é do player da vez
+					blind_pieces_id = gameBoard.blind_pieces()
+					
+					if blind_pieces_id != []:	# se houver peças de movimento obrigatório...
+						allowed_piece = False
+						
+						for ID in blind_pieces_id:	# ... checa se a peça clicada é uma delas.
+							if piece.ID == ID:
+								allowed_piece = True
+						
+						if not allowed_piece:
+							continue
 					
 					possible_moves = piece.possible_moves(gameBoard)
-					gameBoard.show_possible_moves(possible_moves)
 					
-					new_click = pygame.event.wait()
-					
-					while new_click.type != pygame.MOUSEBUTTONDOWN:
-						new_click = pygame.event.wait()
-					
-					new_position = pygame.mouse.get_pos()
-					new_coord = [new_position[0]/60, new_position[1]/60]
-					
-					if(piece.check_movement(new_coord, gameBoard)):
-						piece.move(new_coord, gameBoard)
-						gameBoard.rounds += 1
-					else:
-						print 'Invalid movement. Try again.'
-					
-					gameBoard.get_info()
+					if possible_moves != []:
+						gameBoard.show_possible_moves(possible_moves)
+						
+						click = gameBoard.get_click_coord()
+						valid_movement = piece.check_movement(click, gameBoard)
+						
+						if valid_movement != False:
+							piece.move(click, gameBoard)
+							
+							if valid_movement != True:
+								multiple_jump = gameBoard.multiple_jump(piece.ID)
+								allowed_piece = piece.ID
+								
+								while multiple_jump:
+									gameBoard.update_board()
+									click = gameBoard.get_click_coord()
+									
+									for piece in gameBoard.pieces:
+										if piece.coord == click:
+											if piece.ID == allowed_piece:
+												possible_moves = piece.possible_moves(gameBoard)
+												gameBoard.show_possible_moves(possible_moves)
+												
+												click = gameBoard.get_click_coord()
+												valid_movement = piece.check_movement(click, gameBoard)
+												
+												if valid_movement:
+													piece.move(click, gameBoard)
+													multiple_jump = gameBoard.multiple_jump(piece.ID)
+							
+							gameBoard.rounds += 1
+						else:
+							print 'Invalid movement. Try again.'
+							gameBoard.get_info()
 				
 	gameBoard.update_board()				
-	pygame.display.update()
 
 pygame.quit()
 quit()
