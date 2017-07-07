@@ -6,6 +6,7 @@
 import os, sys
 import pygame
 from pygame.locals import *
+from menu import *
 
 pygame.init()
 
@@ -21,8 +22,98 @@ PLAYER1_COLOR = (197, 20, 16)
 PLAYER2_COLOR = (23, 98, 167)
 
 BLACK = (0, 0, 0)
+GOLD = (255, 223, 0)
 WHITE = (255, 255, 255)
 # fim das constantes.
+
+def help_page():
+	
+	screen = pygame.display.set_mode((680, 480))
+	pygame.display.set_caption('Damas')
+	
+	screen.fill(BLACK)
+	
+	myfont = pygame.font.SysFont('Ubuntu', 18)
+	textsurface = myfont.render('Pressione qualquer tecla para voltar ao menu', False, (255, 255, 255))
+	screen.blit(textsurface,(0,0))
+	pygame.display.update()
+	
+	while True:
+		
+		pygame.event.set_blocked(pygame.MOUSEMOTION)
+		event = pygame.event.wait()
+		
+		if event.type == pygame.KEYDOWN:
+			screen.fill(BLACK)
+			pygame.display.update()
+			break
+		
+		if event.type == pygame.QUIT:
+			pygame.quit()
+			quit()
+
+def menu():
+   screen = pygame.display.set_mode((680, 480))
+   pygame.display.set_caption('Damas')
+
+   # Create 3 diffrent menus.  One of them is only text, another one is only
+   # images, and a third is -gasp- a mix of images and text buttons!  To
+   # understand the input factors, see the menu file
+   menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
+               [('Iniciar uma partida', 1, None),
+                ('Regras',  2, None),
+                ('Sair do jogo',       3, None)])
+
+   menu.set_center(True, True)
+   menu.set_alignment('center', 'center')
+
+   # Create the state variables (make them different so that the user event is
+   # triggered at the start of the "while 1" loop so that the initial display
+   # does not wait for user input)
+   state = 0
+   prev_state = 1
+
+   # rect_list is the list of pygame.Rect's that will tell pygame where to
+   # update the screen (there is no point in updating the entire screen if only
+   # a small portion of it changed!)
+   rect_list = []
+
+   # Ignore mouse motion (greatly reduces resources when not needed)
+   pygame.event.set_blocked(pygame.MOUSEMOTION)
+
+   while True:
+      # Check if the state has changed, if it has, then post a user event to
+      # the queue to force the menu to be shown at least once
+      if prev_state != state:
+         pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
+         prev_state = state
+
+      e = pygame.event.wait()
+
+      # Update the menu, based on which "state" we are in - When using the menu
+      # in a more complex program, definitely make the states global variables
+      # so that you can refer to them by a name
+      if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
+         if state == 0:
+            rect_list, state = menu.update(e, state)
+         elif state == 1:
+            print 'Jogo iniciado!'
+            state = 0
+            break
+         elif state == 2:
+            print 'Ajuda'
+            help_page()
+            state = 0
+         else:
+            print 'Saindo...'
+            pygame.quit()
+            sys.exit()
+
+      if e.type == pygame.QUIT:
+         pygame.quit()
+         sys.exit()
+
+      pygame.display.update(rect_list)
 
 class Piece(pygame.sprite.Sprite):
 	def __init__(self, player, position, piece_id):
@@ -43,6 +134,9 @@ class Piece(pygame.sprite.Sprite):
 		
 		pygame.draw.circle(gameBoard, self.color, [column*60+30, row*60+30], PIECE_RADIUS)
 		
+		if self.status == 'king':	# desenho da 'coroa'
+			pygame.draw.circle(gameBoard, GOLD, [column*60+30, row*60+30], PIECE_RADIUS-11)
+		
 	def check_movement(self, new_coord, gameBoard):
 		# retorna True se o movimento for válido, False caso o contrário ocorra.
 		# exceção: retorna o ID da peça se ela fizer uma captura durante o movimento.
@@ -50,47 +144,99 @@ class Piece(pygame.sprite.Sprite):
 		column = new_coord[0]
 		row = new_coord[1]
 		
-		obligatory = self.obligatory_capture(gameBoard)	
+		if self.status == 'king':
+			captures = self.possible_captures(gameBoard)
+		
+		obligatory = self.obligatory_capture(gameBoard)
 		
 		if obligatory != []:
-			for i in xrange(len(obligatory)):
-				if [column, row] == obligatory[i]:
-					captures = self.possible_captures(gameBoard)
-					
-					cap_row = captures[i][1]
-					cap_column = captures[i][0]
-					
-					for i in xrange(len(gameBoard.pieces)-1, -1, -1):
-						if gameBoard.pieces[i].coord == [cap_column, cap_row]:
-							gameBoard.pieces.pop(i)
-							gameBoard.board_status[cap_row][cap_column] = 0
-					
-					return self.ID
+			if self.status == 'man':
+				for i in xrange(len(obligatory)):
+					if [column, row] == obligatory[i]:
+						captures = self.possible_captures(gameBoard)
+						
+						cap_row = captures[i][1]
+						cap_column = captures[i][0]
+						
+						for i in xrange(len(gameBoard.pieces)-1, -1, -1):
+							if gameBoard.pieces[i].coord == [cap_column, cap_row]:
+								gameBoard.pieces.pop(i)
+								gameBoard.board_status[cap_row][cap_column] = 0
+						
+						return self.ID
 			
-			return False
+				return False
+			else:
+				# IMPORTANTE: se a peça for uma dama, captures terá os ID's das possíveis
+				# peças a serem capturadas.
+				
+				if [column, row] in obligatory:
+					self_row = self.coord[1]
+					self_column = self.coord[0]
+					
+					movement = [column - self_column, row - self_row]
+								
+					if abs(movement[0]) > 1:
+						if movement[0] < 0: movement[0] = -1
+						else: movement[0] = 1
+					if abs(movement[1]) > 1:
+						if movement[1] < 0: movement[1] = -1
+						else: movement[1] = 1
+						
+					position_captured = [self_column + movement[0], self_row + movement[1]]
+					
+					while self.check_coord(position_captured):
+						for i in xrange(len(gameBoard.pieces)):
+							if gameBoard.pieces[i].coord == position_captured:
+								
+								gameBoard.board_status[gameBoard.pieces[i].coord[1]][gameBoard.pieces[i].coord[0]] = 0
+								gameBoard.pieces.pop(i)
+								
+								return self.ID
+						
+						position_captured = [position_captured[0] + movement[0], position_captured[1] + movement[1]]
+				
+				return False
+						
 		
 		if column < 0 or column > 7:
 			return False
 		if row < 0 or row > 7:
 			return False
 		
-		if self.player == 2:
-			if row != self.coord[1]-1:
-				return False
-			if column != self.coord[0]+1 and column != self.coord[0]-1:
-				return False
-		else:
-			if row != self.coord[1]+1:
-				return False
-			if column != self.coord[0]+1 and column != self.coord[0]-1:
-				return False
-			
 		if gameBoard.board_status[row][column] != 0:
 			return False
+		
+		if self.status == 'man':
+			if self.player == 2:
+				if row != self.coord[1]-1:
+					return False
+				if column != self.coord[0]+1 and column != self.coord[0]-1:
+					return False
+			else:
+				if row != self.coord[1]+1:
+					return False
+				if column != self.coord[0]+1 and column != self.coord[0]-1:
+					return False
+		else:
+			adjacents = [self.get_NE(), self.get_NW(), self.get_SE(), self.get_SW()]
+			valid = False	
+			
+			for i in xrange(len(adjacents)):
+				for j in xrange(len(adjacents[i])):
+					coord = adjacents[i][j]
+					
+					if [column, row] == coord:
+						valid = True
+					
+			return valid
 		
 		return True
 	
 	def move(self, new_coord, gameBoard):
+		# além de mover a peça, retorna True caso ela seja
+		# coroada naquele movimento.
+		
 		row = self.coord[1]
 		column = self.coord[0]
 		
@@ -100,6 +246,13 @@ class Piece(pygame.sprite.Sprite):
 		row = self.coord[1]
 		column = self.coord[0]
 		gameBoard.board_status[row][column] = self.player
+		
+		if self.player == 2:	# condições para promoção da peça a Dama.
+			if row == 0 and self.status == 'man':
+				self.status = 'king'
+		else:
+			if row == 7 and self.status == 'man':
+				self.status = 'king'
 		
 		gameBoard.update_board()
 		
@@ -111,20 +264,37 @@ class Piece(pygame.sprite.Sprite):
 		obligatory = self.obligatory_capture(gameBoard)
 		
 		if obligatory == []:
-			if self.player == 2:
-				if self.check_movement([column-1, row-1], gameBoard):
-					moves.append([column-1, row-1])
-					
-				if self.check_movement([column+1, row-1], gameBoard):
-					moves.append([column+1, row-1])
+			if self.status == 'man':
+				if self.player == 2:
+					if self.check_movement([column-1, row-1], gameBoard):
+						moves.append([column-1, row-1])
+						
+					if self.check_movement([column+1, row-1], gameBoard):
+						moves.append([column+1, row-1])
+				else:
+					if self.check_movement([column-1, row+1], gameBoard):
+						moves.append([column-1, row+1])
+						
+					if self.check_movement([column+1, row+1], gameBoard):
+						moves.append([column+1, row+1])
+				
+				return moves
+				
 			else:
-				if self.check_movement([column-1, row+1], gameBoard):
-					moves.append([column-1, row+1])
-					
-				if self.check_movement([column+1, row+1], gameBoard):
-					moves.append([column+1, row+1])
-			
-			return moves
+				adjacents = [self.get_NE(), self.get_NW(), self.get_SE(), self.get_SW()]
+				
+				for i in xrange(len(adjacents)):
+					for j in xrange(len(adjacents[i])):
+						row = adjacents[i][j][1]
+						column = adjacents[i][j][0]
+						
+						if gameBoard.board_status[row][column] == 0:
+							moves.append([column, row])
+						else:
+							break
+				
+				return moves
+				
 		else:
 			return obligatory
 	
@@ -146,34 +316,101 @@ class Piece(pygame.sprite.Sprite):
 		return adjacents
 		
 	def obligatory_capture(self, gameBoard):
-		adjacents = self.get_adjacent()
-		obligatory = []
-		
-		for coord in adjacents:
-			row = coord[1]
-			column = coord[0]
+		if self.status == 'man':
+			adjacents = self.get_adjacent()
+			obligatory = []
 			
-			if gameBoard.board_status[row][column] != 0:		# verifica se há uma peça adjacente
-				if gameBoard.board_status[row][column] != self.player:	# se houver, verifica se é inimiga
-					row_piece = self.coord[1]
-					column_piece = self.coord[0]
+			for coord in adjacents:
+				row = coord[1]
+				column = coord[0]
+				
+				if gameBoard.board_status[row][column] != 0:		# verifica se há uma peça adjacente
+					if gameBoard.board_status[row][column] != self.player:	# se houver, verifica se é inimiga
+						row_piece = self.coord[1]
+						column_piece = self.coord[0]
+						
+						# deslocamento necessário para chegar à posição da inimiga
+						movement = [row_piece-row, column_piece-column]
+						
+						if self.status != 'king':
+							if row - movement[0] >= 0 and row - movement[0] <= 7:
+								if column - movement[1] >= 0 and column - movement[1] <= 7:
+									if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
+										new_place = [column - movement[1], row - movement[0]]
+										obligatory.append(new_place)
+		else:
+			# retorna os movimentos possíveis que a peça atual pode
+			# fazer caso seja possível capturar uma  peça inimiga.
+			
+			adjacents = [self.get_NE(), self.get_NW(), self.get_SE(), self.get_SW()]
+			obligatory = []
+			
+			for i in xrange(len(adjacents)-1, -1, -1):
+				break_piece_loop = False
+				
+				for j in xrange(len(adjacents[i])):
+					if break_piece_loop: break
+					coord = adjacents[i][j]
 					
-					# deslocamento necessário para chegar à posição da inimiga
-					movement = [row_piece-row, column_piece-column]
-					
-					if row - movement[0] >= 0 and row - movement[0] <= 7:
-						if column - movement[1] >= 0 and column - movement[1] <= 7:
-							if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
-								new_place = [column - movement[1], row - movement[0]]
-								obligatory.append(new_place)
-		
+					for piece in gameBoard.pieces:
+						if piece.coord == coord:
+							if piece.player != self.player:
+								break_piece_loop = False
+								
+								row = coord[1]
+								column = coord[0]
+								
+								row_self = self.coord[1]
+								column_self = self.coord[0]
+								
+								movement = [column - column_self, row - row_self]
+								
+								if abs(movement[0]) > 1:
+									if movement[0] < 0: movement[0] = -1
+									else: movement[0] = 1
+								if abs(movement[1]) > 1:
+									if movement[1] < 0: movement[1] = -1
+									else: movement[1] = 1
+									
+								new_place = [column + movement[0], row + movement[1]]
+								
+								if self.check_coord(new_place):
+									if gameBoard.board_status[new_place[1]][new_place[0]] == 0:
+										aux = new_place[:]
+										obligatory.append(aux)
+								
+										new_place[0] += movement[0]
+										new_place[1] += movement[1]
+										
+										while self.check_coord(new_place):
+											if gameBoard.board_status[new_place[1]][new_place[0]] == 0:
+												aux = new_place[:]
+												obligatory.append(aux)
+												
+												new_place[0] += movement[0]
+												new_place[1] += movement[1]
+												
+											else:
+												adjacents.pop(i)
+												break_piece_loop = True
+												break
+									else:
+										adjacents.pop(i)
+										break_piece_loop = True
+								else:
+									adjacents.pop(i)
+									break_piece_loop = True
+							
+							if break_piece_loop:
+								break
+								
 		return obligatory
 		
 	def possible_captures(self, gameBoard):
-		# função parecida com a "obligatory_capture", dessa mesma classe, que ao
+		# função parecida com a "obligatory_capture", dessa mesma classe, mas ao
 		# invés de retornar as posições obrigatórias da peça naquele movimento,
-		# ela retorna as coordenadas da peça inimiga que está sendo capturada,
-		# quando o movimento obrigatório for realizado.
+		# ela retorna as coordenadas da peça inimiga que será capturada
+		# se o movimento obrigatório for realizado.
 		
 		adjacents = self.get_adjacent()
 		captures = []
@@ -190,23 +427,106 @@ class Piece(pygame.sprite.Sprite):
 					# deslocamento necessário para chegar à posição da inimiga
 					movement = [row_piece-row, column_piece-column]
 					
-					if row - movement[0] >= 0 and row - movement[0] <= 7:
-						if column - movement[1] >= 0 and column - movement[1] <= 7:
-							if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
-								new_place = [column - movement[1], row - movement[0]]
-								captures.append([column, row])
+					if self.status != 'king':
+						if row - movement[0] >= 0 and row - movement[0] <= 7:
+							if column - movement[1] >= 0 and column - movement[1] <= 7:
+								if gameBoard.board_status[row - movement[0]][column - movement[1]] == 0:
+									captures.append([column, row])				
 							
 		return captures
 	
-	#def get_movement(self, movement):
-		#if movement == [1, 1]:
-			#return 'NORTHWEST'
-		#if movement == [1, -1]:
-			#return 'NORTHEAST'
-		#if movement == [-1, 1]:
-			#return 'SOUTHWEST'
-		#if movement == [-1, -1]:
-			#return 'SOUTHEAST'
+	def get_NE (self):
+		NE_aux = [1, 1]
+		NE = [1, 1]
+		
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		x = []
+		
+		while True:
+			possible = False
+			if column + NE[0] <= 7 and column + NE[0] >= 0:
+				if row + NE[1] <= 7 and row + NE[1] >= 0:
+					x.append([column + NE[0], row + NE[1]])
+					possible = True
+					
+			if not possible: break
+			for j in xrange(2): NE[j] += NE_aux[j]
+		
+		return x
+	
+	def get_NW (self):
+		NW_aux = [1, -1]
+		NW = [1, -1]
+		
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		x = []
+			
+		while True:
+			possible = False
+			if column + NW[0] <= 7 and column + NW[0] >= 0:
+				if row + NW[1] <= 7 and row + NW[1] >= 0:
+					x.append([column + NW[0], row + NW[1]])
+					possible = True
+			
+			if not possible: break
+			for j in xrange(2): NW[j] += NW_aux[j]
+		
+		return x
+		
+	def get_SE (self):
+		SE_aux = [-1, 1]
+		SE = [-1, 1]
+		
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		x = []
+		
+		while True:
+			possible = False	
+			if column + SE[0] <= 7 and column + SE[0] >= 0:
+				if row + SE[1] <= 7 and row + SE[1] >= 0:
+					x.append([column + SE[0], row + SE[1]])
+					possible = True
+			
+			if not possible: break
+			for j in xrange(2): SE[j] += SE_aux[j]
+		
+		return x
+		
+	def get_SW (self):
+		SW_aux = [-1, -1]
+		SW = [-1, -1]
+		
+		row = self.coord[1]
+		column = self.coord[0]
+		
+		x = []
+			
+		while True:
+			possible = False	
+			if column + SW[0] <= 7 and column + SW[0] >= 0:
+				if row + SW[1] <= 7 and row + SW[1] >= 0:
+					x.append([column + SW[0], row + SW[1]])
+					possible = True
+			
+			if not possible: break
+			for j in xrange(2): SW[j] += SW_aux[j]
+		
+		return x
+	
+	def check_coord(self, coord):
+		# checa se a coordenada está contida no tabuleiro
+		
+		if coord[0] <= 7 and coord[0] >= 0:
+			if coord[1] <= 7 and coord[1] >= 0:
+				return True
+		
+		return False
 		
 
 class Board(pygame.sprite.Sprite):
@@ -340,6 +660,8 @@ gameBoard = Board(BOARD_SIZE)
 sqr_size = gameBoard.square_size
 gameBoard.initialize_pieces()
 
+menu()
+
 pygame.display.set_caption('Damas')
 pygame.display.update()
 
@@ -386,9 +708,13 @@ while not gameExit:
 						valid_movement = piece.check_movement(click, gameBoard)
 						
 						if valid_movement != False:
+							status = piece.status
 							piece.move(click, gameBoard)
 							
-							if valid_movement != True:	# quando a peça que se moveu capturar uma peça, entramos nessa condição
+							if status != piece.status:	# quando a peça for promovida
+								valid_movement = True
+							
+							if valid_movement != True:	# quando a peça que se moveu capturar uma peças
 								multiple_jump = gameBoard.multiple_jump(piece.ID)
 								allowed_piece = piece.ID
 								
@@ -407,7 +733,7 @@ while not gameExit:
 												if valid_movement != False:
 													piece.move(click, gameBoard)
 													multiple_jump = gameBoard.multiple_jump(piece.ID)
-									
+																						
 									gameBoard.update_board()
 							
 							gameBoard.rounds += 1
