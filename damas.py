@@ -1,12 +1,12 @@
 # coding: utf-8
 # Aluno: Matheus Oliveira
 # Disciplina: Programação I
-# Miniprojeto Damas
+# Miniprojeto 1: Damas
+# Data: Junho de 2017
 
 import os, sys
 import pygame
 from pygame.locals import *
-from menu import *
 
 pygame.init()
 
@@ -52,68 +52,61 @@ def help_page():
 			pygame.quit()
 			quit()
 
-def menu():
-   screen = pygame.display.set_mode((680, 480))
-   pygame.display.set_caption('Damas')
+#def menu():
+   #screen = pygame.display.set_mode((680, 480))
+   #pygame.display.set_caption('Damas')
 
-   # Create 3 diffrent menus.  One of them is only text, another one is only
-   # images, and a third is -gasp- a mix of images and text buttons!  To
-   # understand the input factors, see the menu file
-   menu = cMenu(50, 50, 20, 5, 'vertical', 100, screen,
-               [('Iniciar uma partida', 1, None),
-                ('Regras',  2, None),
-                ('Sair do jogo',       3, None)])
+   #menu = #OPÇÕES DO MENU
+               #[('Iniciar partida', 1, None),
+                #('Ajuda/Regras',  2, None),
+                #('Creditos',    3, None),
+                #('Sair',       4, None)])
 
-   menu.set_center(True, True)
-   menu.set_alignment('center', 'center')
+   #menu.set_center(True, True)
+   #menu.set_alignment('center', 'center')
+   
+   #myfont = pygame.font.Font(None, 45)
+   #textsurface = myfont.render('Menu', False, (255, 0, 0))
+   #screen.blit(textsurface,(270, 120))
+   #pygame.display.update()
 
-   # Create the state variables (make them different so that the user event is
-   # triggered at the start of the "while 1" loop so that the initial display
-   # does not wait for user input)
-   state = 0
-   prev_state = 1
+   #state = 0
+   #prev_state = 1
+   
+   #rect_list = []
 
-   # rect_list is the list of pygame.Rect's that will tell pygame where to
-   # update the screen (there is no point in updating the entire screen if only
-   # a small portion of it changed!)
-   rect_list = []
+   #pygame.event.set_blocked(pygame.MOUSEMOTION)
 
-   # Ignore mouse motion (greatly reduces resources when not needed)
-   pygame.event.set_blocked(pygame.MOUSEMOTION)
+   #while True:
+      #if prev_state != state:
+         #pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
+         #prev_state = state
 
-   while True:
-      # Check if the state has changed, if it has, then post a user event to
-      # the queue to force the menu to be shown at least once
-      if prev_state != state:
-         pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
-         prev_state = state
+      #e = pygame.event.wait()
 
-      e = pygame.event.wait()
+      #if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
+         #if state == 0:
+            #rect_list, state = menu.update(e, state)
+         #elif state == 1:
+            #print 'Jogo iniciado'
+            #state = 0
+         #elif state == 2:
+            #print 'Ajuda/Regras'
+            #help_page()
+            #state = 0
+         #elif state == 3:
+            #print 'Créditos'
+            #state = 0
+         #else:
+            #print 'Saindo...'
+            #pygame.quit()
+            #sys.exit()
 
-      # Update the menu, based on which "state" we are in - When using the menu
-      # in a more complex program, definitely make the states global variables
-      # so that you can refer to them by a name
-      if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
-         if state == 0:
-            rect_list, state = menu.update(e, state)
-         elif state == 1:
-            print 'Jogo iniciado!'
-            state = 0
-            break
-         elif state == 2:
-            print 'Ajuda'
-            help_page()
-            state = 0
-         else:
-            print 'Saindo...'
-            pygame.quit()
-            sys.exit()
+      #if e.type == pygame.QUIT:
+         #pygame.quit()
+         #sys.exit()
 
-      if e.type == pygame.QUIT:
-         pygame.quit()
-         sys.exit()
-
-      pygame.display.update(rect_list)
+      #pygame.display.update(rect_list)
 
 class Piece(pygame.sprite.Sprite):
 	def __init__(self, player, position, piece_id):
@@ -660,7 +653,7 @@ gameBoard = Board(BOARD_SIZE)
 sqr_size = gameBoard.square_size
 gameBoard.initialize_pieces()
 
-menu()
+#menu()
 
 pygame.display.set_caption('Damas')
 pygame.display.update()
