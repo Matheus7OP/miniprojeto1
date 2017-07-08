@@ -617,6 +617,11 @@ class Board():
 		
 		self.surface.blit(actual_round,(500,220))
 		pygame.display.update()
+		
+		if player_1_captures == 12:
+			self.finish_game('player1')
+		if player_2_captures == 12:
+			self.finish_game('player2')
 	
 	def help_page(self):
 		self.surface.fill(BLACK)
@@ -704,6 +709,37 @@ class Board():
 				self.surface.fill(BLACK)
 				pygame.display.update()
 				break
+
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				quit()
+
+	def finish_game(self, winner):
+		self.surface.fill(BLACK)
+		
+		if winner == 'player1':
+			color = PLAYER1_COLOR
+			winner = 'Vermelho'
+		else:
+			color = PLAYER2_COLOR
+			winner = 'Azul'
+
+		myfont = pygame.font.Font(None, 45)
+		
+		info1 = myfont.render('Vitoria do jogador ' + winner + '!', False, (color))
+		info2 = myfont.render('Parabens!  =)', False, (color))
+		
+		self.surface.blit(info1, (180, 185))
+		self.surface.blit(info2, (180, 220))
+		
+		pygame.display.update()
+
+		while True:
+			event = pygame.event.wait()
+
+			if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+				pygame.quit()
+				quit()
 
 			if event.type == pygame.QUIT:
 				pygame.quit()
