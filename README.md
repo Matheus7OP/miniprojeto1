@@ -1,5 +1,5 @@
 # miniprojeto1
-Miniprojeto Programação 1 - Damas
+Miniprojeto Programação 1 - Damas (Checkers)
 
 Funcionalidades:
 - Tabuleiro e peças são desenhados na janela do jogo;
@@ -17,5 +17,7 @@ Funcionalidades:
 - É exibida continuamente a pontuação dos jogadores durante a partida;
 - É exibido, na interface, a quem pertence o turno atual;
 - Mensagem de vitória é exibida quando um dos jogadores termina de capturar todas as peças do adversário.
+
+Observação: Para fazer uso do jogo, é necessário ter o pygame e o python instalados no computador. 
 
 Data de conclusão: Junho de 2017.
