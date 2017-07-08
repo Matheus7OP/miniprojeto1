@@ -24,91 +24,11 @@ PLAYER2_COLOR = (23, 98, 167)
 BLACK = (0, 0, 0)
 GOLD = (255, 223, 0)
 WHITE = (255, 255, 255)
+BLUE = (23, 98, 167)
+RED = (197, 20, 16)
 # fim das constantes.
 
-def help_page():
-	
-	screen = pygame.display.set_mode((680, 480))
-	pygame.display.set_caption('Damas')
-	
-	screen.fill(BLACK)
-	
-	myfont = pygame.font.SysFont('Ubuntu', 18)
-	textsurface = myfont.render('Pressione qualquer tecla para voltar ao menu', False, (255, 255, 255))
-	screen.blit(textsurface,(0,0))
-	pygame.display.update()
-	
-	while True:
-		
-		pygame.event.set_blocked(pygame.MOUSEMOTION)
-		event = pygame.event.wait()
-		
-		if event.type == pygame.KEYDOWN:
-			screen.fill(BLACK)
-			pygame.display.update()
-			break
-		
-		if event.type == pygame.QUIT:
-			pygame.quit()
-			quit()
-
-#def menu():
-   #screen = pygame.display.set_mode((680, 480))
-   #pygame.display.set_caption('Damas')
-
-   #menu = #OPÇÕES DO MENU
-               #[('Iniciar partida', 1, None),
-                #('Ajuda/Regras',  2, None),
-                #('Creditos',    3, None),
-                #('Sair',       4, None)])
-
-   #menu.set_center(True, True)
-   #menu.set_alignment('center', 'center')
-   
-   #myfont = pygame.font.Font(None, 45)
-   #textsurface = myfont.render('Menu', False, (255, 0, 0))
-   #screen.blit(textsurface,(270, 120))
-   #pygame.display.update()
-
-   #state = 0
-   #prev_state = 1
-   
-   #rect_list = []
-
-   #pygame.event.set_blocked(pygame.MOUSEMOTION)
-
-   #while True:
-      #if prev_state != state:
-         #pygame.event.post(pygame.event.Event(EVENT_CHANGE_STATE, key = 0))
-         #prev_state = state
-
-      #e = pygame.event.wait()
-
-      #if e.type == pygame.KEYDOWN or e.type == EVENT_CHANGE_STATE:
-         #if state == 0:
-            #rect_list, state = menu.update(e, state)
-         #elif state == 1:
-            #print 'Jogo iniciado'
-            #state = 0
-         #elif state == 2:
-            #print 'Ajuda/Regras'
-            #help_page()
-            #state = 0
-         #elif state == 3:
-            #print 'Créditos'
-            #state = 0
-         #else:
-            #print 'Saindo...'
-            #pygame.quit()
-            #sys.exit()
-
-      #if e.type == pygame.QUIT:
-         #pygame.quit()
-         #sys.exit()
-
-      #pygame.display.update(rect_list)
-
-class Piece(pygame.sprite.Sprite):
+class Piece():
 	def __init__(self, player, position, piece_id):
 		colors = [PLAYER1_COLOR, PLAYER2_COLOR]
 		
@@ -394,6 +314,10 @@ class Piece(pygame.sprite.Sprite):
 									adjacents.pop(i)
 									break_piece_loop = True
 							
+							else:
+								adjacents.pop(i)
+								break_piece_loop = True
+							
 							if break_piece_loop:
 								break
 								
@@ -520,9 +444,8 @@ class Piece(pygame.sprite.Sprite):
 				return True
 		
 		return False
-		
 
-class Board(pygame.sprite.Sprite):
+class Board():
 	def __init__(self, board_size):
 		self.colors = [BOARD_COLOR_1, BOARD_COLOR_2, POSSIBLE_MOVEMENT]	# cores do quadriculado alternado.
 		
@@ -530,7 +453,7 @@ class Board(pygame.sprite.Sprite):
 		self.surface_size = 480			# tamanho da tela em pixels.
 		
 		self.square_size = 60
-		self.surface = pygame.display.set_mode((self.surface_size, self.surface_size)) # +220 1ºp (MENU)
+		self.surface = pygame.display.set_mode((self.surface_size+220, self.surface_size)) # +220 1ºp (MENU)
 		
 		self.board_status = []
 		self.amount_pieces = 0
@@ -593,7 +516,9 @@ class Board(pygame.sprite.Sprite):
 					self.amount_pieces += 1
 	
 	def update_board(self):
-		self.surface.fill(BLACK)
+		self.interface()
+		square = (0, 0, 480, 480)
+		self.surface.fill(BLACK, square)
 		
 		self.initialize_board()
 		
@@ -648,14 +573,212 @@ class Board(pygame.sprite.Sprite):
 		new_coord = [new_position[0]/60, new_position[1]/60]
 		
 		return new_coord
+	
+	def interface(self):
+		square = (480, 0, 220, 480)
+		self.surface.fill(BLACK, square)
+		
+		myfont = pygame.font.Font(None, 24)
+		total_pieces = 12
+		
+		player_1_captures = total_pieces
+		player_2_captures = total_pieces
+		
+		for piece in self.pieces:
+			if piece.player == 1:
+				player_2_captures -= 1
+			else:
+				player_1_captures -= 1
+		
+		infos_p1_1 = myfont.render('O jogador Azul fez:', False, (PLAYER2_COLOR))
+		infos_p1_2 = myfont.render(str(player_2_captures) + ' captura(s)', False, (WHITE))
+		infos_p1_3 = myfont.render(str(gameBoard.rounds/2) + ' jogada(s)', False, (WHITE))
+		
+		infos_p2_1 = myfont.render('O jogador Vermelho fez:', False, (PLAYER1_COLOR))
+		infos_p2_2 = myfont.render(str(player_1_captures) + ' captura(s)', False, (WHITE))
+		infos_p2_3 = myfont.render(str( (gameBoard.rounds-1) / 2) + ' jogada(s)', False, (WHITE))
+		
+		self.surface.blit(infos_p2_1,(500,80))
+		self.surface.blit(infos_p2_3,(502,100))
+		self.surface.blit(infos_p2_2,(502,120))
+		
+		self.surface.blit(infos_p1_1,(500,320))
+		self.surface.blit(infos_p1_3,(502,340))
+		self.surface.blit(infos_p1_2,(502,360))
+		
+		player_turn = (gameBoard.rounds-1)%2
+		
+		if player_turn == 1: 
+			player_turn = 'Vermelho'
+			actual_round = myfont.render('Vez do jogador ' + player_turn, False, (PLAYER1_COLOR))
+		else:
+			player_turn = 'Azul'
+			actual_round = myfont.render('Vez do jogador ' + player_turn, False, (PLAYER2_COLOR))
+		
+		self.surface.blit(actual_round,(500,220))
+		pygame.display.update()
+	
+	def help_page(self):
+		self.surface.fill(BLACK)
+
+		myfont = pygame.font.Font(None, 30)
+		important = myfont.render('Pressione qualquer tecla para voltar ao menu.', False, (255, 255, 255))
+		self.surface.blit(important, (5, 455))
+
+		myfont = pygame.font.Font(None, 25)
+		
+		info1 = myfont.render('O jogo de damas e praticado em um tabuleiro de 64 casas.', False, (BOARD_COLOR_1))
+		info2 = myfont.render('O objetivo do jogo e capturar todas as pecas do adversario.', False, (BOARD_COLOR_2))
+		info3 = myfont.render('A peca anda so para frente, uma casa de cada vez, na diagonal.', False, (BOARD_COLOR_2))
+		info4 = myfont.render('Quando a peca atinge a oitava linha do tabuleiro ela e promovida a dama.', False, (BOARD_COLOR_2))
+		info5 = myfont.render('A dama e uma peca de movimentos mais amplos. Ela anda para frente e para tras,', False, (BOARD_COLOR_1))
+		info6 = myfont.render('quantas casas quiser, nao podendo saltar sobre uma peca da mesma cor. ', False, (BOARD_COLOR_1))
+		info7 = myfont.render('A captura e obrigatoria, ou seja, nao existe sopro.', False, (BOARD_COLOR_2))
+		info8 = myfont.render('Duas ou mais pecas juntas, na mesma diagonal, nao podem ser capturadas.', False, (BOARD_COLOR_2))
+		info9 = myfont.render('A peca e a dama podem capturar tanto para frente como para tras.', False, (BOARD_COLOR_1))
+		info10 = myfont.render('O movimento de captura pode ser encadeado sem que o jogador passe a vez.', False, (BOARD_COLOR_1))
+		
+		game1 = myfont.render('Durante o jogo, ao clicar em uma peca, sera exibido em verde os movimentos', False, (BLUE))
+		game2 = myfont.render('possiveis da mesma. Se nada acontecer ao clicar em uma peca, significa que', False, (BLUE))
+		game3 = myfont.render('ela nao tem movimentos possiveis ou o turno pertence ao outro jogador.', False, (BLUE))
+		game4 = myfont.render('Divirta-se!   =)', False, (RED))
+		
+		self.surface.blit(info1, (5, 45))
+		self.surface.blit(info2, (5, 75))
+		self.surface.blit(info3, (5, 95))
+		self.surface.blit(info4, (5, 115))
+		self.surface.blit(info5, (5, 145))
+		self.surface.blit(info6, (5, 165))
+		self.surface.blit(info7, (5, 195))
+		self.surface.blit(info8, (5, 215))
+		self.surface.blit(info9, (5, 245))
+		self.surface.blit(info10, (5, 265))
+		
+		self.surface.blit(game1, (5, 295))
+		self.surface.blit(game2, (5, 315))
+		self.surface.blit(game3, (5, 335))
+		self.surface.blit(game4, (5, 365))
+		
+		pygame.display.update()
+
+		while True:
+			event = pygame.event.wait()
+
+			if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+				self.surface.fill(BLACK)
+				pygame.display.update()
+				break
+
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				quit()
+	
+	def mcredits(self):
+		self.surface.fill(BLACK)
+
+		myfont = pygame.font.Font(None, 30)
+		important = myfont.render('Pressione qualquer tecla para voltar ao menu.', False, (255, 255, 255))
+		self.surface.blit(important, (5, 455))
+
+		myfont = pygame.font.Font(None, 25)
+		
+		info1 = myfont.render('Programador: Matheus Oliveira', False, (BLUE))
+		info2 = myfont.render('Disciplina: Programacao 1 / Laboratorio de Programacao 1', False, (RED))
+		info3 = myfont.render('Data: Junho de 2017', False, (RED))
+		info4 = myfont.render('Versao do Python utilizada: 2.7', False, (BOARD_COLOR_2))
+		info5 = myfont.render('Versao do Pygame utilizada: 1.9.1', False, (BOARD_COLOR_2))
+		
+		
+		self.surface.blit(info1, (5, 55))
+		self.surface.blit(info2, (5, 105))
+		self.surface.blit(info3, (5, 125))
+		self.surface.blit(info4, (5, 165))
+		self.surface.blit(info5, (5, 185))
+		
+		pygame.display.update()
+
+		while True:
+			event = pygame.event.wait()
+
+			if event.type == pygame.KEYDOWN or event.type == pygame.MOUSEBUTTONDOWN:
+				self.surface.fill(BLACK)
+				pygame.display.update()
+				break
+
+			if event.type == pygame.QUIT:
+				pygame.quit()
+				quit()
+
+	def menu(self):
+		while True:
+			self.surface.fill(BLACK)
+			menu_quit = False
+
+			myfont = pygame.font.Font(None, 45)
+			menu = myfont.render('Menu', False, (BLUE))
+			self.surface.blit(menu,(295, 120))
+			
+			myfont = pygame.font.Font(None, 30)
+			
+			opt_1 = myfont.render('Iniciar partida', False, (WHITE))
+			opt_2 = myfont.render('Ajuda/Regras', False, (WHITE))
+			opt_3 = myfont.render('Creditos', False, (WHITE))
+			opt_4 = myfont.render('Sair', False, (WHITE))
+			
+			self.surface.blit(opt_1,(270, 180))
+			self.surface.blit(opt_2,(270, 210))
+			self.surface.blit(opt_3,(270, 240))
+			self.surface.blit(opt_4,(272, 270))
+			
+			pygame.display.update()
+			
+			intervals = [ [ [272, 400], [183, 197] ], [ [272, 400], [215, 227] ],
+						[ [272, 400], [242, 258] ], [ [272, 395], [273, 288] ] ]
+			
+			
+			e = pygame.event.wait()
+
+			if e.type == pygame.MOUSEBUTTONDOWN:
+				mouse_position = pygame.mouse.get_pos()
+				
+				if mouse_position[1] >= 170 and mouse_position[1] <= 305:
+					if mouse_position[0] >= 270 and mouse_position[0] <= 405:		
+						for i in xrange(len(intervals)):
+							interval = intervals[i]
+							
+							if mouse_position[0] >= interval[0][0] and mouse_position[0] <= interval[0][1]:
+								if mouse_position[1] >= interval[1][0] and mouse_position[1] <= interval[1][1]:
+									
+									if i == 0:		# Iniciar partida
+										menu_quit = True
+										break
+										
+									elif i == 1:	# Ajuda/Regras
+										self.help_page()
+										
+									elif i == 2:	# Creditos
+										self.mcredits()
+										
+									else:			# Sair do jogo
+										pygame.quit()
+										sys.exit()
+										
+						
+						if menu_quit:
+							break
+
+			if e.type == pygame.QUIT:
+				pygame.quit()
+				sys.exit()
+
 						
 gameBoard = Board(BOARD_SIZE)
 sqr_size = gameBoard.square_size
-gameBoard.initialize_pieces()
-
-#menu()
 
 pygame.display.set_caption('Damas')
+gameBoard.initialize_pieces()
+gameBoard.menu()
+
 pygame.display.update()
 
 gameExit = False
