@@ -15,6 +15,7 @@ Funcionalidades:
 - Menu inicial;
 - Opção de visualizar Regras/Ajuda no menu inicial;
 - É exibida continuamente a pontuação dos jogadores durante a partida;
-- É exibido, na interface, a quem pertence o turno atual.
+- É exibido, na interface, a quem pertence o turno atual;
+- Mensagem de vitória é exibida quando um dos jogadores termina de capturar todas as peças do adversário.
 
 Data de conclusão: Junho de 2017.
