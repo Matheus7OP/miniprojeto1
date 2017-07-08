@@ -1,19 +1,20 @@
 # miniprojeto1
-(Em andamento) Miniprojeto Programação 1 - Damas
+(Concludo) Miniprojeto Programação 1 - Damas
 
-Funcionalidades atuais:
+Funcionalidades:
 - Tabuleiro e peças são desenhados na janela do jogo;
 - Sistema de turnos;
-- Exibição de movimentos possíveis ao clicar em uma peça (implementação não final);
+- Exibição de movimentos possíveis ao clicar em uma peça;
 - Movimentação de peças para locais possíveis no tabuleiro;
-- Captura de peças adversárias (implementação não final);
-- Ao tentar movimentar a peça a uma posição não válida, uma mensagem é exibida e a peça não é movida (implementação não final);
+- Captura de peças adversárias;
+- Ao tentar movimentar a peça a uma posição não válida, a peça não é movida;
 - Caso haja peças que possam capturar peças adversárias na vez do player, o movimento de peças naquele turno é restrito a elas;
-- Captura em cadeia (implementação não final).
-
-Funcionalidades a serem implementadas:
-- Interface gráfica;
+- Captura em cadeia (tanto para peças comuns quanto para as damas);
+- Interface durante a partida;
 - Possibilidade de promoção de uma peça a Dama;
-- Tutorial;
-- Exibição de pontuação;
-- Exibição de quem é a vez de jogar (na interface);
+- Menu inicial;
+- Opção de visualizar Regras/Ajuda no menu inicial;
+- É exibida continuamente a pontuação dos jogadores durante a partida;
+- É exibido, na interface, a quem pertence o turno atual.
+
+Data de conclusão: Junho de 2017.
