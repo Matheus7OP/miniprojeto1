@@ -1,5 +1,5 @@
 # miniprojeto1
-(Concluído) Miniprojeto Programação 1 - Damas
+Miniprojeto Programação 1 - Damas
 
 Funcionalidades:
 - Tabuleiro e peças são desenhados na janela do jogo;
