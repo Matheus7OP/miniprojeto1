@@ -1,6 +1,8 @@
 # miniprojeto1
 Miniprojeto Programação 1 - Damas (Checkers)
 
+Screencast feito para apresentação do projeto em funcionamento: https://youtu.be/W7gbiqpUov0
+
 Funcionalidades:
 - Tabuleiro e peças são desenhados na janela do jogo;
 - Sistema de turnos;
