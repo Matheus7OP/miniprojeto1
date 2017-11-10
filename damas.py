@@ -147,8 +147,8 @@ class Piece():
 		return True
 	
 	def move(self, new_coord, gameBoard):
-		# além de mover a peça, retorna True caso ela seja
-		# coroada naquele movimento.
+		# função usada para mover a peça, após o movimento
+		# ser validado
 		
 		row = self.coord[1]
 		column = self.coord[0]
